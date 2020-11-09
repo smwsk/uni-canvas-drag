@@ -1,12 +1,10 @@
 {
 	"pages": [
 		{
-			"path": "pages/index/index",
-			"style": {
-				"backgroundTextStyle": "dark"
-			}
+		    "path" : "pages/index/index",
+		    "style" : {}
 		}
-	],
+    ],
 	"sitemapLocation": "sitemap.json",
 	"globalStyle": {
 		"backgroundTextStyle": "light",

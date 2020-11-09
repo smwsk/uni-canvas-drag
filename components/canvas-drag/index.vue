@@ -1,9 +1,10 @@
 <template>
-	<canvas canvas-id="canvas-drag" disable-scroll="true" @touchstart="start" @touchmove="move" @touchend="end" :style="'width: ' + width + 'rpx; height: ' + height + 'rpx;'"></canvas>
+	<canvas canvas-id="canvas-drag" :drawData="drawArr" disable-scroll="true" @touchstart="start" @touchmove="move" @touchend="end" :style="'width: ' + width + 'rpx; height: ' + height + 'rpx;'"></canvas>
 </template>
 
 <script>
 // components/canvas-drag/index.js
+import {countTextLength} from '@/utils/canvasUtil.js'
 let DELETE_ICON = 'https://oss.123tool.cn/client/canvas/close.png'; // 删除按钮
 // 删除按钮
 let DRAG_ICON = 'https://oss.123tool.cn/client/canvas/scale.png'; // 缩放按钮
@@ -30,7 +31,10 @@ const dragGraph = function ({
 }, canvas, factor) {
   if (type === 'text') {
     canvas.setFontSize(fontSize);
-    const textWidth = canvas.measureText(text).width;
+    let textWidth = canvas.measureText(text).width;
+	// #ifdef APP-PLUS
+	textWidth = countTextLength(this.text, canvas)
+	// #endif
     const textHeight = fontSize + 10;
     this.centerX = x + textWidth / 2;
     this.centerY = y + textHeight / 2;
@@ -66,7 +70,6 @@ dragGraph.prototype = {
    */
   paint() {
     this.ctx.save(); // 由于measureText获取文字宽度依赖于样式，所以如果是文字元素需要先设置样式
-
     let textWidth = 0;
     let textHeight = 0;
 
@@ -75,9 +78,12 @@ dragGraph.prototype = {
       this.ctx.setTextBaseline('middle');
       this.ctx.setTextAlign('center');
       this.ctx.setFillStyle(this.color);
-      textWidth = this.ctx.measureText(this.text).width;
+	  textWidth = this.ctx.measureText(this.text).width;
+	  // #ifdef APP-PLUS || APP-NVUE
+		textWidth = countTextLength(this.text, this.ctx)
+	  // #endif
+	  
       textHeight = this.fontSize + 10; // 字体区域中心点不变，左上角位移
-
       this.x = this.centerX - textWidth / 2;
       this.y = this.centerY - textHeight / 2;
     } // 旋转元素
@@ -93,7 +99,6 @@ dragGraph.prototype = {
       this.ctx.drawImage(this.fileUrl, this.x, this.y, this.w, this.h);
     } // 如果是选中状态，绘制选择虚线框，和缩放图标、删除图标
 
-
     if (this.selected) {
       this.ctx.setLineDash([2, 5]);
       this.ctx.setLineWidth(2);
@@ -101,10 +106,10 @@ dragGraph.prototype = {
       this.ctx.lineDashOffset = 6;
 
       if (this.type === 'text') {
-        this.ctx.strokeRect(this.x, this.y, textWidth, textHeight);
-        this.ctx.drawImage(DELETE_ICON, this.x - 15, this.y - 15, 30, 30);
-        this.ctx.drawImage(DRAG_ICON, this.x + textWidth - 15, this.y + textHeight - 15, 30, 30);
-      } else {
+		this.ctx.strokeRect(this.x, this.y, textWidth, textHeight);
+		this.ctx.drawImage(DELETE_ICON, this.x - 15, this.y - 15, 30, 30);
+		this.ctx.drawImage(DRAG_ICON, this.x + textWidth - 15, this.y + textHeight - 15, 30, 30);
+        } else {
         this.ctx.strokeRect(this.x, this.y, this.w, this.h);
         this.ctx.drawImage(DELETE_ICON, this.x - 15, this.y - 15, 30, 30);
         this.ctx.drawImage(DRAG_ICON, this.x + this.w - 15, this.y + this.h - 15, 30, 30);
@@ -155,6 +160,7 @@ dragGraph.prototype = {
    * @param {*} y 点击的坐标
    */
   isInGraph(x, y) {
+	console.log('isInGraph')
     // 删除区域左上角的坐标和区域的高度宽度
     const delW = 30;
     const delH = 30; // 旋转后的删除区域坐标
@@ -166,14 +172,17 @@ dragGraph.prototype = {
 
     const scaleW = 30;
     const scaleH = 30;
-
+	// #ifdef APP-PLUS || APP-VUE
+		this.w = countTextLength(this.text, this.ctx)
+	// #endif
     const transformedScaleCenter = this._rotatePoint(this.x + this.w, this.y + this.h, this.centerX, this.centerY, this.rotate); // 旋转后的变换区域坐标
 
-
-    const transformScaleX = transformedScaleCenter[0] - scaleW / 2;
-    const transformScaleY = transformedScaleCenter[1] - scaleH / 2; // 调试使用，标识可操作区域
-
-    if (DEBUG_MODE) {
+    let transformScaleX = transformedScaleCenter[0] - scaleW / 2;
+    let transformScaleY = transformedScaleCenter[1] - scaleH / 2; // 调试使用，标识可操作区域
+	
+	console.log(x, y, this.w, this.h,this.square, this.insidePolygon(this.square, [x, y]))
+    
+	if (DEBUG_MODE) {
       // 标识删除按钮区域
       this.ctx.setLineWidth(1);
       this.ctx.setStrokeStyle('red');
@@ -185,17 +194,22 @@ dragGraph.prototype = {
 
       this._drawBorder();
     }
-
+	
+	// this.selected = true
     if (x - transformScaleX >= 0 && y - transformScaleY >= 0 && transformScaleX + scaleW - x >= 0 && transformScaleY + scaleH - y >= 0) {
-      // 缩放区域
-      return 'transform';
+		console.log('缩放区域')
+		// 缩放区域
+		return 'transform';
     } else if (x - transformDelX >= 0 && y - transformDelY >= 0 && transformDelX + delW - x >= 0 && transformDelY + delH - y >= 0) {
-      // 删除区域
-      return 'del';
+		console.log('删除区域')
+		// 删除区域
+		return 'del';
     } else if (this.insidePolygon(this.square, [x, y])) {
-      return 'move';
-    } // 不在选择区域里面
-
+		console.log('在选择区域里面')
+		return 'move';
+    }else{ // 不在选择区域里面
+		// this.selected = false
+	} 
 
     return false;
   },
@@ -259,7 +273,11 @@ dragGraph.prototype = {
     // 获取选择区域的宽度高度
     if (this.type === 'text') {
       this.ctx.setFontSize(this.fontSize);
-      const textWidth = this.ctx.measureText(this.text).width;
+      let textWidth = this.ctx.measureText(this.text).width;
+	  // #ifdef APP-PLUS
+	  textWidth = countTextLength(this.text, this.ctx)
+	  // #endif
+	  console.log('transform:' + textWidth)
       const textHeight = this.fontSize + 10;
       this.w = textWidth;
       this.h = textHeight; // 字体区域中心点不变，左上角位移
@@ -307,7 +325,10 @@ dragGraph.prototype = {
       this.fontSize = fontSize <= this.MIN_FONTSIZE ? this.MIN_FONTSIZE : fontSize; // 旋转位移后重新计算坐标
 
       this.ctx.setFontSize(this.fontSize);
-      const textWidth = this.ctx.measureText(this.text).width;
+      let textWidth = this.ctx.measureText(this.text).width;
+	  // #ifdef APP-PLUS
+		textWidth = countTextLength(this.text, this.ctx)
+	  // #endif
       const textHeight = this.fontSize + 10;
       this.w = textWidth;
       this.h = textHeight; // 字体区域中心点不变，左上角位移
@@ -370,22 +391,23 @@ export default {
    */
   paint() {
     this.ctx.save(); // 由于measureText获取文字宽度依赖于样式，所以如果是文字元素需要先设置样式
-
     let textWidth = 0;
     let textHeight = 0;
-
+	
     if (this.type === 'text') {
       this.ctx.setFontSize(this.fontSize);
       this.ctx.setTextBaseline('middle');
       this.ctx.setTextAlign('center');
       this.ctx.setFillStyle(this.color);
       textWidth = this.ctx.measureText(this.text).width;
+	  // #ifdef APP-PLUS
+	  textWidth = countTextLength(this.text, this.ctx)
+	  // #endif
       textHeight = this.fontSize + 10; // 字体区域中心点不变，左上角位移
 
       this.x = this.centerX - textWidth / 2;
       this.y = this.centerY - textHeight / 2;
     } // 旋转元素
-
 
     this.ctx.translate(this.centerX, this.centerY);
     this.ctx.rotate(this.rotate * Math.PI / 180);
@@ -397,8 +419,7 @@ export default {
       this.ctx.drawImage(this.fileUrl, this.x, this.y, this.w, this.h);
     } // 如果是选中状态，绘制选择虚线框，和缩放图标、删除图标
 
-
-    if (this.selected) {
+    if (this.selected == true) {
       this.ctx.setLineDash([2, 5]);
       this.ctx.setLineWidth(2);
       this.ctx.setStrokeStyle(STROKE_COLOR);
@@ -489,7 +510,7 @@ export default {
 
       this._drawBorder();
     }
-
+	// this.selected = true
     if (x - transformScaleX >= 0 && y - transformScaleY >= 0 && transformScaleX + scaleW - x >= 0 && transformScaleY + scaleH - y >= 0) {
       // 缩放区域
       return 'transform';
@@ -498,9 +519,9 @@ export default {
       return 'del';
     } else if (this.insidePolygon(this.square, [x, y])) {
       return 'move';
-    } // 不在选择区域里面
-
-
+    }else{ // 不在选择区域里面
+		// this.selected = false
+	}
     return false;
   },
 
@@ -563,7 +584,10 @@ export default {
     // 获取选择区域的宽度高度
     if (this.type === 'text') {
       this.ctx.setFontSize(this.fontSize);
-      const textWidth = this.ctx.measureText(this.text).width;
+      let textWidth = this.ctx.measureText(this.text).width;
+	  // #ifdef APP-PLUS
+		textWidth = countTextLength(this.text, this.ctx)
+	  // #endif
       const textHeight = this.fontSize + 10;
       this.w = textWidth;
       this.h = textHeight; // 字体区域中心点不变，左上角位移
@@ -593,7 +617,6 @@ export default {
       let resize_rito = lineB / lineA;
       let new_w = currentGraph.w * resize_rito;
       let new_h = currentGraph.h * resize_rito;
-
       if (currentGraph.w < currentGraph.h && new_w < this.MIN_WIDTH) {
         new_w = this.MIN_WIDTH;
         new_h = this.MIN_WIDTH * currentGraph.h / currentGraph.w;
@@ -601,7 +624,6 @@ export default {
         new_h = this.MIN_WIDTH;
         new_w = this.MIN_WIDTH * currentGraph.w / currentGraph.h;
       }
-
       this.w = new_w;
       this.h = new_h;
       this.x = currentGraph.x - (new_w - currentGraph.w) / 2;
@@ -609,13 +631,11 @@ export default {
     } else if (this.type === 'text') {
       const fontSize = currentGraph.fontSize * ((lineB - lineA) / lineA + 1);
       this.fontSize = fontSize <= this.MIN_FONTSIZE ? this.MIN_FONTSIZE : fontSize; // 旋转位移后重新计算坐标
-
       this.ctx.setFontSize(this.fontSize);
       const textWidth = this.ctx.measureText(this.text).width;
       const textHeight = this.fontSize + 10;
       this.w = textWidth;
       this.h = textHeight; // 字体区域中心点不变，左上角位移
-
       this.x = this.centerX - textWidth / 2;
       this.y = this.centerY - textHeight / 2;
     }
@@ -629,11 +649,9 @@ export default {
     const sysInfo = wx.getSystemInfoSync();
     const screenWidth = sysInfo.screenWidth;
     this.factor = screenWidth / 750;
-
     if (typeof this.drawArr === 'undefined') {
       this.drawArr = [];
     }
-
     this.ctx = wx.createCanvasContext('canvas-drag', this);
     this.draw();
   },
@@ -663,14 +681,14 @@ export default {
     toPx(rpx) {
       return rpx * this.factor;
     },
-
-    initBg() {
+    
+	initBg() {
       this.bgColor = '';
       this.bgSourceId = '';
       this.bgImage = '';
     },
-
-    initHistory() {
+    
+	initHistory() {
       this.history = [];
     },
 
@@ -678,20 +696,19 @@ export default {
       if (!this.enableUndo) {
         return;
       }
-
       this.exportJson().then(imgArr => {
         this.history.push(JSON.stringify(imgArr));
       }).catch(e => {
         console.error(e);
       });
     },
-
+	
+	// 回退
     undo() {
       if (!this.enableUndo) {
         console.log(`后退功能未启用，请设置enableUndo="{{true}}"`);
         return;
       }
-
       if (this.history.length > 1) {
         this.history.pop();
         let newConfigObj = this.history[this.history.length - 1];
@@ -700,7 +717,7 @@ export default {
         console.log('已是第一步，不能回退');
       }
     },
-
+	
     onGraphChange(n, o) {
       if (JSON.stringify(n) === '{}') return;
       this.drawArr.push(new dragGraph(Object.assign({
@@ -708,16 +725,14 @@ export default {
         y: 30
       }, n), this.ctx, this.factor));
       this.draw(); // 参数有变化时记录历史
-
       this.recordHistory();
     },
 
     initByArr(newArr) {
+	  console.log('initByArr')
       this.drawArr = []; // 重置绘画元素
-
       this.initBg(); // 重置绘画背景
       // 循环插入 drawArr
-
       newArr.forEach((item, index) => {
         switch (item.type) {
           case 'bgColor':
@@ -738,6 +753,7 @@ export default {
 
           case 'image':
           case 'text':
+			console.log('text')
             if (index === newArr.length - 1) {
               item.selected = true;
             } else {
@@ -775,17 +791,15 @@ export default {
 
     start(e) {
       isMove = false; // 重置移动标识
-
       const {
         x,
         y
       } = e.touches[0];
       this.tempGraphArr = [];
       let lastDelIndex = null; // 记录最后一个需要删除的索引
-
       this.drawArr && this.drawArr.forEach((item, index) => {
         const action = item.isInGraph(x, y);
-
+		console.log(action)
         if (action) {
           item.action = action;
           this.tempGraphArr.push(item); // 保存点击时的坐标
@@ -827,7 +841,6 @@ export default {
           }
         }
       }
-
       this.draw();
     },
 
@@ -839,7 +852,7 @@ export default {
 
       if (this.tempGraphArr && this.tempGraphArr.length > 0) {
         isMove = true; // 有选中元素，并且有移动时，设置移动标识
-
+		this.selected = true
         const currentGraph = this.tempGraphArr[this.tempGraphArr.length - 1];
 
         if (currentGraph.action === 'move') {
@@ -948,24 +961,34 @@ export default {
         resolve(exportArr);
       });
     },
-
-    changColor(color) {
-      const selected = this.drawArr.filter(item => item.selected);
-
-      if (selected.length > 0) {
-        selected[0].color = color;
-      }
-
-      this.draw(); // 改变文字颜色时记录历史
-
-      this.recordHistory();
+	// 改变文本
+	changeText(text) {
+		const selected = this.drawArr.filter(item => item.selected);
+		if (selected.length > 0) {
+			console.log(text, selected)
+			selected[0].text = text;
+		}else{
+			return
+		}
+		this.draw(); // 改变文字颜色时记录历史
+		this.recordHistory();
+	},
+    // 改变颜色
+	changColor(color) {
+		const selected = this.drawArr.filter(item => item.selected);
+		if (selected.length > 0) {
+			selected[0].color = color;
+		}else{
+			return
+		}
+		this.draw(); // 改变文字颜色时记录历史
+		this.recordHistory();
     },
 
     changeBgColor(color) {
       this.bgImage = '';
       this.bgColor = color;
       this.draw(); // 改变背景颜色时记录历史
-
       this.recordHistory();
     },
 
@@ -990,7 +1013,6 @@ export default {
       this.ctx.draw();
       this.drawArr = [];
       this.initBg(); // 重置绘画背景
-
       this.initHistory(); // 清空历史记录
     }
 

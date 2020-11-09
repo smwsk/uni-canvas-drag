@@ -1,17 +1,22 @@
 <template>
-	<view>
-		<canvas-drag ref="canvasRef" id="canvas-drag" :graph="graph" width="700" height="750" enableUndo="true"></canvas-drag>
-		<view class="btn" @tap="onAddImage">添加图片</view>
-		<view class="btn" @tap="onAddTest">添加测试图片</view>
-		<view class="btn" @tap="onAddText">添加文字</view>
-		<view class="btn" @tap="onExport">导出图片</view>
-		<view class="btn" @tap="onChangeColor">改变文字颜色</view>
-		<view class="btn" @tap="onChangeBgColor">改变背景颜色</view>
-		<view class="btn" @tap="onChangeBgImage">改变背景照片</view>
-		<view class="btn" @tap="onExportJSON">导出模板</view>
-		<view class="btn" @tap="onImport">导入默认模板</view>
-		<view class="btn" @tap="onClearCanvas">清空画布</view>
-		<view class="btn" @tap="onUndo">后退</view>
+	<view class="home">
+		<view>
+			<canvas-drag ref="canvasRef" id="canvas-drag" :graph="graph" :width="700" :height="700" :enableUndo="true"></canvas-drag>
+		</view>
+		<view>
+			<view class="btn" @tap="onAddImage">添加图片</view>
+			<view class="btn" @tap="onAddTest">添加测试图片</view>
+			<view class="btn" @tap="onAddText">添加文字</view>
+			<view class="btn" @tap="changeText">改变文字</view>
+			<view class="btn" @tap="onExport">导出图片</view>
+			<view class="btn" @tap="onChangeColor">改变文字颜色</view>
+			<view class="btn" @tap="onChangeBgColor">改变背景颜色</view>
+			<view class="btn" @tap="onChangeBgImage">改变背景照片</view>
+			<view class="btn" @tap="onExportJSON">导出模板</view>
+			<view class="btn" @tap="onImport">导入默认模板</view>
+			<view class="btn" @tap="onClearCanvas">清空画布</view>
+			<view class="btn" @tap="onUndo">后退</view>
+		</view>
 	</view>
 </template>
 
@@ -68,19 +73,28 @@ export default {
      * 添加文本
      */
     onAddText() {
-      this.setData({
-        graph: {
-          type: 'text',
-          text: 'helloworld'
-        }
-      });
+		console.log('addText')
+		this.setData({
+		graph: {
+			"type": "text",
+			"text": "helloworld",
+			"color": "red",
+			"fontSize": 20,
+			"y": 243,
+			"x": 97,
+			"rotate": 0
+		}})
     },
+	// 改变文字
+	changeText() {
+		this.$refs.canvasRef.changeText('改变了');
+	},
 
     /**
      * 导出图片
      */
     onExport() {
-      this.$refs.canvasRef.export().then(filePath => {
+      this.$refs.canvasRef.exportJson().then(filePath => {
         console.log(filePath);
         wx.previewImage({
           urls: [filePath]
@@ -138,7 +152,7 @@ export default {
       }, {
         "type": "text",
         "text": "helloworld",
-        "color": "blue",
+        "color": "red",
         "fontSize": 20,
         "y": 243,
         "x": 97,
@@ -164,4 +178,9 @@ export default {
 </script>
 <style>
 @import "./index.css";
+.home{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
 </style>
