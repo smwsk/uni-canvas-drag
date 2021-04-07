@@ -1,7 +1,7 @@
 <template>
 	<view class="home">
 		<view>
-			<canvas-drag ref="canvasRef" id="canvas-drag" :graph="graph" :width="700" :height="700" :enableUndo="true"></canvas-drag>
+			<canvas-drag ref="canvasRef" id="canvas-drag" :graph="graph" class="canvasArea" :enableUndo="true"></canvas-drag>
 		</view>
 		<view>
 			<view class="btn" @tap="onAddImage">添加图片</view>
@@ -96,9 +96,6 @@ export default {
     onExport() {
       this.$refs.canvasRef.exportJson().then(filePath => {
         console.log(filePath);
-        wx.previewImage({
-          urls: [filePath]
-        });
       }).catch(e => {
         console.error(e);
       });
@@ -130,7 +127,7 @@ export default {
      */
     onExportJSON() {
       this.$refs.canvasRef.exportFun().then(imgArr => {
-        console.log(JSON.stringify(imgArr));
+        console.log(imgArr,JSON.stringify(imgArr));
       }).catch(e => {
         console.error(e);
       });
@@ -177,10 +174,24 @@ export default {
 };
 </script>
 <style>
-@import "./index.css";
+.btn{
+    padding: 10rpx 20rpx;
+    float:left;
+    margin:10rpx;
+    border:solid 1px #dfdfdf;
+    border-radius: 10rpx;
+}
 .home{
+	width: 100vw;
+	height: 100vh;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: space-around;
+	
+}
+.canvasArea{
+	width: 100vw;
+	height: 50vh;
+	border: 1rpx solid #CCCCCC;
 }
 </style>

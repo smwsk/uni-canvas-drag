@@ -52,17 +52,7 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "wx88d187418de9551e",
-        "setting" : {
-            "urlCheck" : false
-        },
         "usingComponents" : true,
-        "permission" : {
-            "scope.userLocation" : {
-                "desc" : "你的位置信息将用于小程序位置接口的效果展示"
-            }
-        },
-        "plugins" : {},
         "uniStatistics" : {
             "enable" : true
         }
@@ -88,6 +78,16 @@
     "uniStatistics" : {
         "enable" : true
     },
+	"devServer" : {
+	    "disableHostCheck" : true,
+	    "proxy" : {
+	        "/" : {
+	            "target" : "https://www.123tool.cn",
+	            "changeOrigin" : true,
+	            "secure" : false
+	        }
+	    }
+	},
     "h5" : {
         "uniStatistics" : {
             "enable" : true

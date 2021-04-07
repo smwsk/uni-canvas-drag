@@ -5,12 +5,10 @@
 		    "style" : {}
 		}
     ],
-	"sitemapLocation": "sitemap.json",
 	"globalStyle": {
-		"backgroundTextStyle": "light",
-		"navigationBarBackgroundColor": "#fff",
-		"navigationBarTitleText": "WeChat",
-		"navigationBarTextStyle": "black"
-	},
-	"subPackages": []
+		"navigationBarBackgroundColor": "#0081ff",
+		"navigationBarTitleText": "uni-canvas",
+		"navigationStyle": "custom",
+		"navigationBarTextStyle": "white"
+	}
 }

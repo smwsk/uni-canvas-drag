@@ -5,9 +5,11 @@
 <script>
 // components/canvas-drag/index.js
 import {countTextLength} from '@/utils/canvasUtil.js'
-let DELETE_ICON = 'https://oss.123tool.cn/client/canvas/close.png'; // 删除按钮
+let DELETE_ICON = 'https://oss.123tool.cn/client/canvas/close.png'; // 删除按钮 地址改成直接的项目地址不然跨域会导致web端不能使用
+// let DELETE_ICON = 'https://oss.123tool.cn/client/canvas/close.png'; // 删除按钮
 // 删除按钮
 let DRAG_ICON = 'https://oss.123tool.cn/client/canvas/scale.png'; // 缩放按钮
+// let DRAG_ICON = 'https://oss.123tool.cn/client/canvas/scale.png'; // 缩放按钮
 // 缩放按钮
 const STROKE_COLOR = 'red';
 const ROTATE_ENABLED = true;
@@ -652,7 +654,7 @@ export default {
     if (typeof this.drawArr === 'undefined') {
       this.drawArr = [];
     }
-    this.ctx = wx.createCanvasContext('canvas-drag', this);
+    this.ctx = uni.createCanvasContext('canvas-drag', this);
     this.draw();
   },
 
@@ -892,15 +894,15 @@ export default {
           return item;
         });
         this.draw().then(() => {
-          wx.canvasToTempFilePath({
-            canvasId: 'canvas-drag',
-            success: res => {
-              resolve(res.tempFilePath);
-            },
-            fail: e => {
-              reject(e);
-            }
-          }, this);
+			uni.canvasToTempFilePath({
+				canvasId: 'canvas-drag',
+				success: res => {
+				resolve(res.tempFilePath);
+			},
+			fail: e => {
+				reject(e);
+			}
+		 }, this);
         });
       });
     },
@@ -1020,5 +1022,20 @@ export default {
 };
 </script>
 <style>
-@import "./index.css";
+/* components/canvas-drag/index.wxss */
+.movable-label {
+    margin-top: 300rpx;
+  width: 750rpx;
+  height: 400rpx;
+  background: #eee;
+}
+.movable-block {
+    width: 120rpx;
+    height: 120rpx;
+    background: #ccc;
+}
+.movable-block .image-con {
+    width: 100%;
+    height: 100%;
+}
 </style>
